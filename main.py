@@ -36,11 +36,23 @@ class ynab_splitwise_transfer():
                 # don't import deleted expenses
                 if expense['deleted_time']:
                     continue
+                
+                # Calculate amount based on whether it's an expense or reimbursement
+                if expense['is_reimbursement']:
+                    # Positive amount for money received (inflow)
+                    amount = int(expense['owed'] * 1000)
+                    memo_prefix = "Reimbursement:"
+                else:
+                    # Negative amount for money owed (outflow) 
+                    amount = -int(expense['owed'] * 1000)
+                    memo_prefix = "Expense:"
+                
                 transaction = {
                                 "account_id": self.ynab_account_id,
-                                "date":expense['date'],
-                                "amount":-int(expense['owed']*1000),
-                                "memo":" ".join([expense['description'].strip() ,"with", combine_names(expense['users'])]),
+                                "date": expense['date'],
+                                "amount": amount,
+                                "payee_name": expense.get('payee_name', 'Splitwise'),
+                                "memo": " ".join([memo_prefix, expense['description'].strip(), "with", combine_names(expense['users'])]),
                                 "cleared": "cleared"
                             }
                 ynab_transactions.append(transaction)
