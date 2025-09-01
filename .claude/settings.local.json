@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:dev.splitwise.com)",
+      "WebFetch(domain:api.youneedabudget.com)",
+      "WebFetch(domain:api.ynab.com)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
