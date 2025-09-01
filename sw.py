@@ -30,6 +30,7 @@ class SW():
     def get_expenses(self, dated_before=None, dated_after=None):
         # get all expenses between 2 dates
         expenses = self.sw.getExpenses(limit=self.limit, dated_before=dated_before, dated_after=dated_after)
+        print(f"LOG: Retrieved {len(expenses)} total expenses from Splitwise API")
         owed_expenses = []
         for expense in expenses:
             owed_expense = {}
@@ -48,16 +49,25 @@ class SW():
                     
                     # Handle both scenarios: user owes money (expense) or user is owed money (reimbursement)
                     if description.strip() != 'Payment':
+                        print(f"LOG: Analyzing expense - paid=${paid:.2f}, owed=${owed:.2f}")
+                        
                         # Original working condition for expenses (when you owe money)
                         if paid == 0 and owed > 0:
+                            print(f"LOG: ✓ EXPENSE detected - owe ${owed:.2f}")
                             owed_expense['owed'] = owed
                             owed_expense['is_reimbursement'] = False
                             is_append = True
                         # New condition for reimbursements (when you are owed money)
                         elif paid > 0 and paid > owed:
-                            owed_expense['owed'] = paid - owed
+                            net_reimbursement = paid - owed
+                            print(f"LOG: ✓ REIMBURSEMENT detected - owed ${net_reimbursement:.2f}")
+                            owed_expense['owed'] = net_reimbursement
                             owed_expense['is_reimbursement'] = True
                             is_append = True
+                        else:
+                            print(f"LOG: ✗ Skipped - conditions not met (paid=${paid:.2f}, owed=${owed:.2f})")
+                    else:
+                        print(f"LOG: ✗ Skipped - Payment transaction")
                         
                         if is_append:
                             owed_expense['date'] = expense.getDate()
@@ -111,6 +121,8 @@ class SW():
                 
                 owed_expense['payee_name'] = payee_name
                 owed_expenses.append(owed_expense)
+        
+        print(f"LOG: Final result - {len(owed_expenses)} expenses/reimbursements ready for YNAB import")
         return owed_expenses
     
     def create_expense(self, expense):

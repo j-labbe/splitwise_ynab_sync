@@ -28,13 +28,18 @@ class ynab_splitwise_transfer():
         self.logger.info("Moving transactions from Splitwise to YNAB...")
         self.logger.info(f"Getting all Splitwise expenses from {self.sw_start_date} to {self.end_date}")
         expenses = self.sw.get_expenses(dated_after=self.sw_start_date, dated_before=self.end_date)
+        self.logger.info(f"Found {len(expenses) if expenses else 0} raw expenses from Splitwise")
 
         if expenses:
             # process
             ynab_transactions = []
+            expenses_processed = 0
+            reimbursements_processed = 0
+            
             for expense in expenses:
                 # don't import deleted expenses
                 if expense['deleted_time']:
+                    self.logger.info("Skipping deleted expense")
                     continue
                 
                 # Calculate amount based on whether it's an expense or reimbursement
@@ -42,10 +47,14 @@ class ynab_splitwise_transfer():
                     # Positive amount for money received (inflow)
                     amount = int(expense['owed'] * 1000)
                     memo_prefix = "Reimbursement:"
+                    reimbursements_processed += 1
+                    self.logger.info(f"Processing REIMBURSEMENT: ${expense['owed']:.2f} from payee (inflow)")
                 else:
                     # Negative amount for money owed (outflow) 
                     amount = -int(expense['owed'] * 1000)
                     memo_prefix = "Expense:"
+                    expenses_processed += 1
+                    self.logger.info(f"Processing EXPENSE: ${expense['owed']:.2f} to payee (outflow)")
                 
                 transaction = {
                                 "account_id": self.ynab_account_id,
@@ -56,6 +65,8 @@ class ynab_splitwise_transfer():
                                 "cleared": "cleared"
                             }
                 ynab_transactions.append(transaction)
+            
+            self.logger.info(f"Summary: {expenses_processed} expenses, {reimbursements_processed} reimbursements processed")
             # export to ynab
             if ynab_transactions:
                 self.logger.info(f"Writing {len(ynab_transactions)} record(s) to YNAB.")
