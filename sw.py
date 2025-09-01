@@ -48,13 +48,13 @@ class SW():
                     
                     # Handle both scenarios: user owes money (expense) or user is owed money (reimbursement)
                     if description.strip() != 'Payment':
+                        # Original working condition for expenses (when you owe money)
                         if paid == 0 and owed > 0:
-                            # User owes money (expense scenario)
                             owed_expense['owed'] = owed
                             owed_expense['is_reimbursement'] = False
                             is_append = True
-                        elif paid > owed:
-                            # User is owed money (reimbursement scenario)
+                        # New condition for reimbursements (when you are owed money)
+                        elif paid > 0 and paid > owed:
                             owed_expense['owed'] = paid - owed
                             owed_expense['is_reimbursement'] = True
                             is_append = True
